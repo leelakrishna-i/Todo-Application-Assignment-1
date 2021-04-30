@@ -1,5 +1,5 @@
 const { format } = require("date-fns");
-const isMatch = require("date-fns/isMatch");
+var isValid = require("date-fns/isValid");
 const express = require("express");
 const path = require("path");
 const sqlite3 = require("sqlite3");
@@ -85,8 +85,8 @@ app.get("/todos/:todoId/", async (request, response) => {
 
 //get data on /agenda/
 app.get("/agenda/", async (request, response) => {
-  const { date = "" } = request.query;
-  if (date !== "") {
+  const { date } = request.query;
+  if (isValid(new Date(date))) {
     let formatDate = format(new Date(date), "yyyy-MM-dd");
     const getDataOnDateQuery = `SELECT * FROM todo WHERE due_date = '${formatDate}';`;
     let data = await db.all(getDataOnDateQuery);
@@ -107,8 +107,7 @@ app.get("/agenda/", async (request, response) => {
 //post data
 app.post("/todos/", async (request, response) => {
   const { id, todo, priority, status, category, dueDate = "" } = request.body;
-  let dateCheck = new Date(dueDate);
-  let formatDate = format(new Date(dueDate), "yyyy-MM-dd");
+
   if (status !== "TO DO" && status !== "IN PROGRESS" && status !== "DONE") {
     response.status(400);
     response.send("Invalid Todo Status");
@@ -129,12 +128,12 @@ app.post("/todos/", async (request, response) => {
   ) {
     response.status(400);
     response.send("Invalid Todo Category");
-  } else if (dateCheck.toString() === "Invalid Date") {
+  } else if (isValid(new Date(dueDate)) === false) {
     response.status(400);
-    response.send("Invalid Todo Due Date");
+    response.send("Invalid Due Date");
   } else {
     const insertDataQuery = `INSERT INTO todo (id,todo,category,priority,status,due_date)
-  VALUES(${id},'${todo}','${category}','${priority}','${status}','${formatDate}');`;
+  VALUES(${id},'${todo}','${category}','${priority}','${status}','${dueDate}');`;
     await db.run(insertDataQuery);
     response.send("Todo Successfully Added");
   }
@@ -179,6 +178,10 @@ app.put("/todos/:todoId/", async (request, response) => {
     }
   } else if (dataObject.dueDate !== undefined) {
     update = "Due Date";
+    if (isValid(new Date(dataObject.dueDate)) === false) {
+      response.status(400);
+      response.send("Invalid Due Date");
+    }
   }
   let uniqueDataQuery = `SELECT * FROM todo WHERE id=${todoId};`;
   let uniqueData = await db.get(uniqueDataQuery);
@@ -193,9 +196,7 @@ app.put("/todos/:todoId/", async (request, response) => {
   if (update !== null) {
     let updateDataQuery = `UPDATE todo SET id=${id},todo='${todo}',category='${category}',priority='${priority}',status='${status}',due_date='${dueDate}' WHERE id=${todoId};`;
     let data = await db.run(updateDataQuery);
-    if (data !== undefined) {
-      response.send(`${update} Updated`);
-    }
+    response.send(`${update} Updated`);
   } else {
     response.send(`Invalid Todo ${update}`);
   }

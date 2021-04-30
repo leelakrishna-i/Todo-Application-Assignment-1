@@ -19,7 +19,7 @@ GET http://localhost:3000/todos/?category=WORK&status=DONE HTTP/1.1
 GET http://localhost:3000/todos/6/ HTTP/1.1
 ###
 
-GET http://localhost:3000/agenda/? HTTP/1.1
+GET http://localhost:3000/agenda/?date=2021-02-22 HTTP/1.1
 ###
 
 POST http://localhost:3000/todos/ HTTP/1.1
@@ -39,7 +39,7 @@ PUT http://localhost:3000/todos/6/ HTTP/1.1
 Content-Type: application/json
 
 {
-  "status": "TO DO"
+  "status": "DONE"
 }
 ###
 
